@@ -1,26 +1,56 @@
 inferencer_config{
   target_classes: "drone"
-  image_width: 1248
+  image_width: 640
   image_height: 384
   image_channels: 3
-  batch_size: 8
+  batch_size: 1
   gpu_index: 0
+  tlt_config{
+   model: "/workspace/output/weights/drone_detector.tlt"
   }
-  bbox_handler_config{
-    kitti_dump: true
-    disable_overlay: false
-    overlay_linewidth: 2
-    classwise_bbox_handler_config{
-      key:"drone"
-      value: {
-        confidence_model: "aggregate_cov"
-        output_map: "drone"
-        confidence_threshold: 0.3
-        bbox_color{
-          R: 0
-          G: 255
-          B: 0
-        }
+}
+bbox_handler_config{
+  kitti_dump: true
+  disable_overlay: false
+  overlay_linewidth: 2
+
+  classwise_bbox_handler_config{
+    key:"drone"
+    value: {
+      confidence_model: "aggregate_cov"
+      output_map: "drone"
+      bbox_color{
+        R: 0
+        G: 255
+        B: 0
+      }
+      clustering_config{
+        clustering_algorithm: DBSCAN
+        coverage_threshold: 0.005
+        dbscan_eps: 0.15
+        dbscan_min_samples: 0.05
+        dbscan_confidence_threshold: 0.3
+        minimum_bounding_box_height: 20
+      }
+    }
+  }
+
+  classwise_bbox_handler_config{
+    key:"default"
+    value: {
+      confidence_model: "aggregate_cov"
+      bbox_color{
+        R: 255
+        G: 0
+        B: 0
+      }
+      clustering_config{
+        clustering_algorithm: DBSCAN
+        dbscan_confidence_threshold: 0.3
+        coverage_threshold: 0.005
+        dbscan_eps: 0.15
+        dbscan_min_samples: 0.05
+        minimum_bounding_box_height: 20
       }
     }
   }

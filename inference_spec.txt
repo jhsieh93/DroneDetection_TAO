@@ -1,0 +1,27 @@
+inferencer_config{
+  target_classes: "drone"
+  image_width: 1248
+  image_height: 384
+  image_channels: 3
+  batch_size: 8
+  gpu_index: 0
+  }
+  bbox_handler_config{
+    kitti_dump: true
+    disable_overlay: false
+    overlay_linewidth: 2
+    classwise_bbox_handler_config{
+      key:"drone"
+      value: {
+        confidence_model: "aggregate_cov"
+        output_map: "drone"
+        confidence_threshold: 0.3
+        bbox_color{
+          R: 0
+          G: 255
+          B: 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,154 @@
+random_seed: 42
+dataset_config {
+  data_sources: {
+    tfrecords_path: "/workspace/dataset/tfrecords/train-fold-*"
+    image_directory_path: "/workspace/dataset/kitti/train"
+  }
+  data_sources: {
+    tfrecords_path: "/workspace/dataset/tfrecords/valid-fold-*"
+    image_directory_path: "/workspace/dataset/kitti/valid"
+  }
+  image_extension: "jpg"
+  target_class_mapping {
+      key: "drone"
+      value: "drone"
+  }
+  validation_fold: 0
+}
+augmentation_config {
+  preprocessing {
+    output_image_width: 640
+    output_image_height: 384
+    output_image_channel: 3
+    min_bbox_width: 1.0
+    min_bbox_height: 1.0
+  }
+  spatial_augmentation {
+    hflip_probability: 0.5
+    vflip_probability: 0.0
+    zoom_min: 1.0
+    zoom_max: 1.0
+    translate_max_x: 8.0
+    translate_max_y: 8.0
+  }
+  color_augmentation {
+    color_shift_stddev: 0.0
+    hue_rotation_max: 25.0
+    saturation_shift_max: 0.2
+    contrast_scale_max: 0.1
+    contrast_center: 0.5
+  }
+}
+model_config {
+  arch: "resnet"
+  #pretrained_model_file: "/workspace/output/weights/drone_detector.tlt"
+  pretrained_model_file: "/workspace/pretrained/resnet18.hdf5"
+  freeze_blocks: 0
+  freeze_blocks: 1
+  all_projections: True
+  num_layers: 18
+  use_pooling: False
+  use_batch_norm: True
+  dropout_rate: 0.0
+  objective_set: {
+    cov {}
+    bbox {
+      scale: 35.0
+      offset: 0.5
+    }
+  }
+}
+evaluation_config {
+  average_precision_mode: INTEGRATE
+  validation_period_during_training: 100
+  first_validation_epoch: 1
+  minimum_detection_ground_truth_overlap {
+    key: "drone"
+    value: 0.5
+  }
+  evaluation_box_config {
+    key: "drone"
+    value {
+      minimum_height: 4
+      maximum_height: 9999
+      minimum_width: 4
+      maximum_width: 9999
+    }
+  }
+}
+cost_function_config {
+  target_classes {
+    name: "drone"
+    class_weight: 1.0
+    coverage_foreground_weight: 0.05
+    objectives {
+      name: "cov"
+      initial_weight: 1.0
+      weight_target: 1.0
+    }
+    objectives {
+      name: "bbox"
+      initial_weight: 10.0
+      weight_target: 10.0
+    }
+  }
+  enable_autoweighting: True
+  max_objective_weight: 0.9999
+  min_objective_weight: 0.0001
+}
+training_config {
+  batch_size_per_gpu: 16
+  num_epochs: 80
+  learning_rate {
+    soft_start_annealing_schedule {
+      min_learning_rate: 5e-6
+      max_learning_rate: 5e-4
+      soft_start: 0.1
+      annealing: 0.7
+    }
+  }
+  regularizer {
+    type: L1
+    weight: 3e-9
+  }
+  optimizer {
+    adam {
+      epsilon: 1e-08
+      beta1: 0.9
+      beta2: 0.999
+    }
+  }
+  cost_scaling {
+    enabled: False
+    initial_exponent: 20.0
+    increment: 0.005
+    decrement: 1.0
+  }
+  checkpoint_interval: 10
+}
+bbox_rasterizer_config {
+  target_class_config {
+    key: "drone"
+    value: {
+      cov_center_x: 0.5
+      cov_center_y: 0.5
+      cov_radius_x: 0.4
+      cov_radius_y: 0.4
+      bbox_min_radius: 1.0
+    }
+  }
+  deadzone_radius: 0.67
+}
+postprocessing_config {
+  target_class_config {
+    key: "drone"
+    value: {
+      clustering_config {
+        coverage_threshold: 0.005
+        dbscan_eps: 0.15
+        dbscan_min_samples: 0.05
+        minimum_bounding_box_height: 20
+      }
+    }
+  }
+}
